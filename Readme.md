@@ -94,3 +94,32 @@ sentence_ids = save_and_link_sequentially(
 )
 ```
 
+### 3. Finding and Linking Similar Paragraphs
+
+Our indexer provides feature that allow you to find similar nodes based on text embeddings and link them together. This is useful for establishing relationships between nodes based on the similarity of their content. These functions are a powerful tool to enrich your graph database by establishing relationships based on textual content similarity.
+
+```python
+# Find a paragraph by text, then find and link similar paragraphs.
+
+paragraph_id = graph.find_node_by_text(
+    text="This is a paragraph.",
+    node_label="Paragraph",
+    similarity_threshold=0.9,
+    max_nodes=1,
+)
+
+graph.find_and_link_similar_nodes_by_id(
+    paragraph_id,
+    index_name="Paragraph",
+    bidirectional=False,
+    similarity_threshold=0.9,
+    max_nodes=3,
+)
+```
+
+`paragraph_id`: The ID of the paragraph node you are starting from.
+`index_name`: The type or label of the node, in this case, "Paragraph".
+`bidirectional`: Determines if the linking should be bidirectional.
+`similarity_threshold`: Only nodes with similarity above this threshold will be linked.
+`max_nodes`: The maximum number of similar nodes to link.
+
