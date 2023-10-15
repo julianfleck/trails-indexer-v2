@@ -1,0 +1,8 @@
+openai
+neo4j
+configparser
+spacy==3.*
+rich
+toml
+en-core-web-sm
+langchain

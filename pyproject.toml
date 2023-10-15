@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+
+[tool.poetry]
+name = "trails_ingest"
+readme = "Readme.md"
+version = "0.1.0"
+description = "Ingests data from various sources and creates a knowledge graph and embeddings"
+homepage = "https://trails.social"
+repository = "https://github.com/trails_org/ingest"
+authors = [
+    "Julian Fleck <julian@trails.social>"
+]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+neo4j = "^4.3.1"
+openai = "^0.27.0"
+rich = "^10.9.0"
+toml = "^0.10.2"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.5"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

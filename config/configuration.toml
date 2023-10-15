@@ -1,0 +1,31 @@
+[GENERAL]
+DEBUG = true
+
+[NEO4J]
+URI = "bolt+s://dev.metasphere.xyz:21001"
+USER = "neo4j"
+PASSWORD = "password" # set as environment variable NEO4J_PASSWORD
+DATABASE = "neo4j"
+
+[OPENAI]
+API_KEY = "YOUR_OPENAI_API_KEY" # set as environment variable OPENAI_API_KEY
+
+[TEXT_PROCESSING]
+CHUNK_SIZE = 5000
+SUMMARY_THRESHOLD = 0.5
+METADATA_EXTRACTION_MODEL = "gpt-3.5-turbo"
+# METADATA_EXTRACTION_MODEL = "gpt-4"
+
+
+[SPACY]
+MODEL = "en_core_web_sm"
+
+[VECTOR_INDEX]
+EMBEDDING_MODEL="text-embedding-ada-002"
+LABEL = "Abstract"
+PROPERTY_KEY = "embedding"
+NEAREST_NEIGHBORS = 10
+VECTOR_INDEX_NAME = "abstract-embeddings"
+VECTOR_DIMENSION = 1536
+SIMILARITY_FUNCTION = "cosine"
+SIMILARITY_THRESHOLD = 0.9
