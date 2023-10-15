@@ -88,21 +88,23 @@ paragraph_ids = save_and_link_sequentially(
     sequence_relationship_name="NEXT"
 )
 
-sentence_ids = save_and_link_sequentially(
-    graph,
-    node_label="Sentence",
-    parent_ids=paragraph_ids,
-    chunker=chunk_sentences,
-    relationship_name="CONTAINS",
-    sequence_relationship_name="NEXT"
-)
+for paragraph_id in paragraph_ids:
+    sentence_ids = save_and_link_sequentially(
+        graph,
+        node_label="Sentence",
+        parent_ids=paragraph_id,
+        chunker=chunk_sentences,
+        relationship_name="CONTAINS",
+        sequence_relationship_name="NEXT"
+    )
 ```
 
-- `text`: The full content of the document.
+- `text`: The content that is supposed to be processed. If no content is provided, a parent node needs to be specified.
 - `node_label`: The label for the node, in this case, "Document".
+- `parent_ids`: The ID (or IDs) of the parent node(s). If no parent node exists, this should be set to `None`.
 - `chunker`: Any function to chunk the provided text. Used here to split into paragraphs or sentences.
-- `relationship_name`: The name of the relationship between the document and its paragraphs.
-- `sequence_relationship_name`: The name of the relationship between sequential paragraphs.
+- `relationship_name`: The name of the relationship between the parent node and the child nodes.
+- `sequence_relationship_name`: The name of the relationship between sequential child nodes.
 
 Running the above script on a text will save the embeddings to a Neo4j vector index for each node label and produce a linked graph similar to this:
 
