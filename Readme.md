@@ -140,3 +140,6 @@ graph.find_and_link_similar_nodes_by_id(
 - `similarity_threshold`: Only nodes with similarity above this threshold will be linked.
 - `max_nodes`: The maximum number of similar nodes to link.
 
+This would link similar paragraphs together and produce a graph like this:
+
+<img width="800" alt="nodes-linked-by-similarity" src="https://github.com/trails-org/indexer-v2/assets/50588193/3e9e5aac-f300-49ce-bc1c-b0cad7af0f66">
