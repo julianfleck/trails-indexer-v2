@@ -52,7 +52,7 @@ pip install -r requirements.txt
 
 ## Usage
 
-### 1 Chunking Text:
+### 1. Chunking Text:
 
 ```python
 from utils.nlp import chunk_sentences, chunk_paragraphs
