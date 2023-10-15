@@ -10,7 +10,7 @@ class VectorStore:
     def __init__(
             self, 
             index_name=None, 
-            node_label=None, 
+            node_label=None,  
             graph=None
         ):
         self.graph = graph
@@ -18,7 +18,7 @@ class VectorStore:
         self.config = config()
         self.neo4j_config = config().get_neo4j_config()
         self.embeddings = Embeddings()
-        self.embeddings_model = Embeddings().model
+        self.embeddings_model = self.embeddings.model
         self.vector_index = self.select_vector_store(index_name=index_name, node_label=node_label)
         self.error_handler.inspect_object(self.vector_index)
 

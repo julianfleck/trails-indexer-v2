@@ -222,10 +222,6 @@ After zooming out to the "Space Exploration" concept, the user can traverse hori
 
 # //////
 
-    import spacy
-
-    nlp = spacy.load("en_core_web_sm")
-
     # def save_and_link(graph, node_label, text=None, chunker=None, relationship_name="LINKS_TO", 
     #                 sequence_relationship_name=None, parent_ids=None):
     #     """
@@ -289,13 +285,6 @@ After zooming out to the "Space Exploration" concept, the user can traverse hori
     #     return chunk_ids
 
 
-
-    def chunk_paragraphs(text):
-        return [paragraph.strip() for paragraph in text.split('\n\n') if paragraph.strip()]
-
-    def chunk_sentences(text):
-        doc = nlp(text)
-        return [sentence.text for sentence in doc.sents if sentence.text.strip() != ""]
 
     # Example usage:
     document_id = graph.save_and_link_sequentially(

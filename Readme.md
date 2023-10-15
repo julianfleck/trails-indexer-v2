@@ -1,49 +1,97 @@
-# Text Processing v1
+# Trails indexer v2
 
-<aside>
-💡 Only generates summaries and let’s the user adjust the zoom
+The Trails Indexer is a Python project designed to process and store textual content into a Neo4j graph database. It allows for the ingestion of text, breaking it down into documents, paragraphs, and sentences, and then saving these as nodes in the graph. Relationships between these nodes can also be established, providing a hierarchical and sequential representation of the text.
 
-</aside>
+## Features
+- Chunking of Text: Uses spaCy to chunk texts into sentences or paragraphs.
+- Vector Storage: Stores chunks of text and their embeddings in a Neo4j graph database.
+- Node Linking: Automatically establishes relationships between parent and child nodes as well as sequential relationships between sibling nodes.
 
-## **Text Processing Algorithm**
+# Files
 
-### **1. User Input**
+```
+.
+├── config
+│   └── configuration.toml                  # Configuration file
+├── database
+│   ├── neo4j.py                            # Neo4j graph database utilities
+│   └── vectorstore.py                      # Vector storage utilities
+│   └── embeddings.py                       # Embedding generation utilities
+├── main.py                                 # Main execution script
+├── requirements.txt                        # Required packages
+├── schema
+│   ├── general.py                          # General schema definitions
+│   ├── metadata.py                         # Metadata schema definitions
+│   └── prompts.py                          # Prompt schema definitions
+├── tests
+│   ├── test_config_loader.py               # Tests for configuration loader
+│   ├── test_database_connection.py         # Tests for database connection
+│   └── test_error_handler.py               # Tests for error handler
+└── utils
+    ├── config_loader.py                    # Configuration loader utilities
+    └── error_handler.py                    # Error handling utilities
 
-- User inputs a URL.
+```
 
-### **2. Text Extraction and Cleanup**
+# Setup & Installation
 
-- Extract text from the URL's HTML.
-- Clean up the extracted text to remove any unwanted characters or formatting.
+1. Clone this repository:
 
-### **3. Text Chunking and Summarization**
+```bash
+git clone https://github.com/trails-org/trails-indexer.git
+```
 
-- Chunk the text into paragraphs.
-    - For each paragraph:
-        - Summarize into one sentence.
-- Chunk each paragraph into sentences.
-    - For each sentence:
-        - Summarize into its shortest form.
+2. Navigate to the project directory and install the required packages:
 
-### **4. Storing**
+```bash
+cd trails-ingest
+pip install -r requirements.txt
+```
 
-- Store summarized texts.
-    - If the summarized text is not present on the knowledge graph, store it as a new node.
+3. Update the config.py file with your Neo4j database credentials.
 
-# Functions breakdown
+## Usage
 
-### **1. Text Extraction and Cleanup**
+### 1 Chunking Text:
 
-- `retrieve_web_content(URL: str) -> str`: Extracts raw text from the given URL.
-- `clean_text(raw_text: str) -> str`: Cleans up the extracted text by removing unwanted characters or formatting.
+```python
+from utils.nlp import chunk_sentences, chunk_paragraphs
 
-### **2. Text Chunking and Summarization**
+sentences = chunk_sentences(your_text)
+paragraphs = chunk_paragraphs(your_text)
+```
 
-- `chunk_into_paragraphs(cleaned_text: str) -> List[str]`: Splits the cleaned text into paragraphs.
-- `summarize_paragraph(paragraph: str) -> str`: Generates a one-sentence summary for the given paragraph.
-- `chunk_into_sentences(paragraph: str) -> List[str]`: Splits the paragraph into individual sentences.
-- `summarize_sentence(sentence: str) -> str`: Generates a shortened form of the given sentence.
+### 2. Saving and Linking Nodes:
+Here's an example of how to save and link nodes using the provided functions:
 
-### **3. Storing**
+```python
+from main import save_and_link
+from database.neo4j import GraphDatabase, save_and_link_sequentially
 
-- `store_text_on_kg(text: str) -> NodeID`: Stores the summarized text on the knowledge graph and returns a unique node ID.
+graph = GraphDatabase()
+
+document_id = save_and_link_sequentially(
+    graph, 
+    text=text, 
+    node_label="Document"
+)
+
+paragraph_ids = save_and_link_sequentially(
+    graph,
+    node_label="Paragraph",
+    parent_ids=document_id,
+    chunker=chunk_paragraphs,
+    relationship_name="CONTAINS",
+    sequence_relationship_name="NEXT"
+)
+
+sentence_ids = save_and_link_sequentially(
+    graph,
+    node_label="Sentence",
+    parent_ids=paragraph_ids,
+    chunker=chunk_sentences,
+    relationship_name="CONTAINS",
+    sequence_relationship_name="NEXT"
+)
+```
+
