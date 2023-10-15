@@ -65,7 +65,6 @@ paragraphs = chunk_paragraphs(your_text)
 Here's an example of how to save and link nodes using the provided functions:
 
 ```python
-from main import save_and_link
 from database.neo4j import GraphDatabase, save_and_link_sequentially
 
 graph = GraphDatabase()
