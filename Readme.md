@@ -98,11 +98,11 @@ sentence_ids = save_and_link_sequentially(
 )
 ```
 
-`text`: The full content of the document.
-`node_label`: The label for the node, in this case, "Document".
-`chunker`: Any function to chunk the provided text. Used here to split into paragraphs or sentences.
-`relationship_name`: The name of the relationship between the document and its paragraphs.
-`sequence_relationship_name`: The name of the relationship between sequential paragraphs.
+- `text`: The full content of the document.
+- `node_label`: The label for the node, in this case, "Document".
+- `chunker`: Any function to chunk the provided text. Used here to split into paragraphs or sentences.
+- `relationship_name`: The name of the relationship between the document and its paragraphs.
+- `sequence_relationship_name`: The name of the relationship between sequential paragraphs.
 
 Running the above script on a text will save the embeddings to a Neo4j vector index for each node label and produce a linked graph similar to this:
 
@@ -132,9 +132,9 @@ graph.find_and_link_similar_nodes_by_id(
 )
 ```
 
-`paragraph_id`: The ID of the paragraph node you are starting from.
-`index_name`: The type or label of the node, in this case, "Paragraph".
-`bidirectional`: Determines if the linking should be bidirectional.
-`similarity_threshold`: Only nodes with similarity above this threshold will be linked.
-`max_nodes`: The maximum number of similar nodes to link.
+- `paragraph_id`: The ID of the paragraph node you are starting from.
+- `index_name`: The type or label of the node, in this case, "Paragraph".
+- `bidirectional`: Determines if the linking should be bidirectional.
+- `similarity_threshold`: Only nodes with similarity above this threshold will be linked.
+- `max_nodes`: The maximum number of similar nodes to link.
 
