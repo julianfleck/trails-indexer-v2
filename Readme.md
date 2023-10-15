@@ -61,11 +61,15 @@ sentences = chunk_sentences(your_text)
 paragraphs = chunk_paragraphs(your_text)
 ```
 
-### 2. Saving and Linking Nodes:
-Here's an example of how to save and link nodes using the provided functions:
+### 2. Saving and Linking Nodes
+
+When working with textual data, we often want to store and organize it hierarchically. For instance, a document can be divided into paragraphs, and each paragraph can further be split into sentences. Our system provides utilities to save the embeddings of the textual data to a vectore store and simultanously link them appropriately in the graph.
+
+Here's an example of how to embed and link nodes using the provided functions:
 
 ```python
 from database.neo4j import GraphDatabase, save_and_link_sequentially
+from utils.nlp import chunk_paragraphs, chunk_sentences
 
 graph = GraphDatabase()
 
@@ -93,6 +97,17 @@ sentence_ids = save_and_link_sequentially(
     sequence_relationship_name="NEXT"
 )
 ```
+
+`text`: The full content of the document.
+`node_label`: The label for the node, in this case, "Document".
+`chunker`: Any function to chunk the provided text. Used here to split into paragraphs or sentences.
+`relationship_name`: The name of the relationship between the document and its paragraphs.
+`sequence_relationship_name`: The name of the relationship between sequential paragraphs.
+
+Running the above script on a text will save the embeddings to a Neo4j vector index for each node label and produce a linked graph similar to this:
+
+<img width="880" alt="node-structure" src="https://github.com/trails-org/indexer-v2/assets/50588193/7e3c1948-bea1-483b-a18b-8f335d139efe">
+
 
 ### 3. Finding and Linking Similar Paragraphs
 
