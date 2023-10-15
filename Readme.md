@@ -1,6 +1,6 @@
 # Trails indexer v2
 
-The Trails Indexer is a Python project designed to process and store textual content into a Neo4j graph database. It allows for the ingestion of text, breaking it down into documents, paragraphs, and sentences, and then saving these as nodes in the graph. Relationships between these nodes can also be established, providing a hierarchical and sequential representation of the text.
+The Trails Indexer is a Python project designed to process and store textual content into a Neo4j graph database. It allows for the retrieval of text embeddings, breaking text down into granular structures, like documents, paragraphs, or sentences, and then saving these as nodes in the graph, alongside with the embeddings. A metadata tagger automatically extracts relevant information from the text. Relationships between the created nodes can also be established, providing a hierarchical and sequential representation of the text.
 
 ## Features
 - Chunking of Text: Uses spaCy to chunk texts into sentences or paragraphs.
@@ -102,7 +102,7 @@ for paragraph_id in paragraph_ids:
 - `text`: The content that is supposed to be processed. If no content is provided, a parent node needs to be specified.
 - `node_label`: The label for the node, in this case, "Document".
 - `parent_ids`: The ID (or IDs) of the parent node(s). If no parent node exists, this should be set to `None`.
-- `chunker`: Any function to chunk the provided text. Used here to split into paragraphs or sentences.
+- `chunker`: A function to chunk the provided text. Used here to split into paragraphs or sentences.
 - `relationship_name`: The name of the relationship between the parent node and the child nodes.
 - `sequence_relationship_name`: The name of the relationship between sequential child nodes.
 
