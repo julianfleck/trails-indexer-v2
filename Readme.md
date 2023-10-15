@@ -38,13 +38,13 @@ The Trails Indexer is a Python project designed to process and store textual con
 1. Clone this repository:
 
 ```bash
-git clone https://github.com/trails-org/trails-indexer.git
+git clone https://github.com/trails-org/indexer-v2.git
 ```
 
 2. Navigate to the project directory and install the required packages:
 
 ```bash
-cd trails-ingest
+cd indexer-v2
 pip install -r requirements.txt
 ```
 
