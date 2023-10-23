@@ -15,8 +15,9 @@ from utils.error_handler import ErrorHandler as error_handler
 from utils.config_loader import ConfigLoader as config
 
 class Optimizer:
-    def __init__(self):
-        model_name = config().get("OPTIMIZER_MODEL")
+    def __init__(self, model=None):
+        if not model:
+            model_name = config().get("OPTIMIZER_MODEL")
         self.llm = ChatOpenAI(temperature=0.0, model=model_name)
 
     def choose_best_option(self, original_prompt, candidates, schema=None):        

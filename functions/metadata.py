@@ -19,13 +19,20 @@ from utils.config_loader import ConfigLoader as config
 
 
 class MetadataEnhancer:
-    def __init__(self, schema=None, temperature=1.6):
+    def __init__(
+            self, 
+            schema=None, 
+            model=None,
+            temperature=1.6
+        ):
         if not schema:
             self.schema = Metadata
         self.schema = schema
-        model_name = config().get("METADATA_EXTRACTION_MODEL")
-        # model_name = "gpt-4"
-        self.llm = ChatOpenAI(temperature=temperature, model=model_name)
+
+        if not model:
+            model = config().get("METADATA_EXTRACTION_MODEL")
+
+        self.llm = ChatOpenAI(temperature=temperature, model=model)
         self.parser = PydanticOutputParser(pydantic_object=self.schema)
         format_instructions = self.parser.get_format_instructions()
 
