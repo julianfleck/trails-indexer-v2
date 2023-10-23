@@ -43,7 +43,6 @@ class MetadataEnhancer:
         chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
 
         self.chain = create_structured_output_chain(self.schema, self.llm, chat_prompt)
-        error_handler().inspect_object(self.chain)
 
         metadata = None
 
@@ -54,7 +53,6 @@ class MetadataEnhancer:
                 error_handler().debug_info(f"Validation error. Retrying.")
                 try:
                     metadata = self.get_metadata(text=text, temperature=1.6)
-                    error_handler().inspect_object(metadata)
                 except Exception as e:
                     error_handler().exception(e)
 
@@ -67,14 +65,11 @@ class MetadataEnhancer:
                 metadata = self.get_metadata(text=text, temperature=1.6)
                 if not isinstance(metadata, Metadata):
                     error_handler().generic_error("Metadata extraction failed.")
-                    error_handler().inspect_object(metadata)
             else:
                 error_handler().debug_info(f"Metadata extraction successful.")
-                error_handler().inspect_object(metadata)
                 return metadata
         else:
             error_handler().generic_error("Metadata extraction failed.")
-            error_handler().inspect_object(metadata)
             return None
 
     def enhance_document(self, document, schema=None):
@@ -97,7 +92,6 @@ class MetadataEnhancer:
                     page_content=document,
                     metadata=metadata
                 )
-                error_handler().inspect_object(document)
             else:
                 document.metadata = self.get_metadata(text=document.page_content)
             return document
