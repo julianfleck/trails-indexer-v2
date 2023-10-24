@@ -1,5 +1,5 @@
 
-from typing import List, Optional
+from typing import List, Optional, Union
 from enum import Enum
 
 from langchain.pydantic_v1 import BaseModel, Field, validator, root_validator
@@ -47,9 +47,6 @@ class Metadata(BaseModel):
     publisher: Optional[str] = Field(
         description=description().publisher.strip()
     )
-    summary: Optional[str] = Field(
-        description=description().summary.strip()
-    )
     hypernyms: Optional[List[str]] = Field(
         description=description().hypernyms.strip()
     )
@@ -60,7 +57,7 @@ class Metadata(BaseModel):
         description=description().topics.strip()
     )
 
-    required = ["title", "summary", "content_type", "topics"]
+    required = ["title", "content_type", "topics"]
 
     # @root_validator
     # def check_author_or_publisher(cls, values):
@@ -69,6 +66,13 @@ class Metadata(BaseModel):
     #     if not author and not publisher:
     #         raise ValueError("At least one of 'author' or 'publisher' must be defined.")
     #     return values
+
+    # Ensure that topics, hypernyms and hyponyms are lower case
+    @validator("topics", "hypernyms", "hyponyms", "file_type", pre=True, always=True)
+    def fields_must_be_lowercase(cls, field: List[str]):
+        if field:
+            field = [item.lower() for item in field]
+        return field
 
     @validator("content_type", pre=True, always=True)
     def content_type_must_be_valid(cls, field: str):
@@ -79,12 +83,22 @@ class Metadata(BaseModel):
         return field
 
 
+class Summaries(BaseModel):
+    summary_short: str = Field(
+        description=description().summary_short.strip(),
+    )
+    summary_medium: str = Field(
+        description=description().summary_medium.strip(),
+    )
+    summary_long: str = Field(
+        description=description().summary_long.strip(),
+    )
+    required = ["summary_short", "summary_medium", "summary_long"]
+
+
 class Section(BaseModel):
     section_number: int = Field(
         description="The number of the section",
-    )
-    summary: str = Field(
-        description=description().summary.strip(),
     )
     text: str = Field(
         description="The text content of the section",
@@ -94,6 +108,9 @@ class Section(BaseModel):
     )
     index_end: int = Field(
         description="The index of the last character of the section in the parent document",
+    )
+    summaries: Optional[List[Summaries]] = Field(
+        description=description().summaries.strip(),
     )
     required = ["section_number", "text", "index_start", "index_end"]
 
