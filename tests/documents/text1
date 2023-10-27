@@ -1,0 +1,33 @@
+# Text Zooming
+
+## Introduction: Spatial Hypernym Zooming
+
+Spatial hypernym zooming is a new interaction paradigm that aims to enhance user experience and improve the usability of digital interfaces. It involves the dynamic manipulation of the spatial relationships between objects, allowing users to navigate and interact with information in a more intuitive and efficient manner.
+
+# Navigational axis
+
+Spatial hypernym zooming extends the current 2D spatial paradigm used in desktop applications to a 3D paradigm. It uses the horizontal, vertical, and forward/backward axes, to traverse and explore different levels of abstraction within a digital interface. By dynamically exploring the spatial relationships between objects, users can navigate and interact with information in a more intuitive and efficient manner, gaining a deeper understanding of the content. 
+
+The table below provides an overview of how each axis corresponds to a specific navigation pattern:
+
+| Axis | Spatial Movement | Action | Response |
+| --- | --- | --- | --- |
+| x | Horizontal – 
+Left and right | Panning/
+Swiping/
+Flicking | Lateral traversal: 
+Navigate through content at the same lateral level and granularity |
+| y | Vertical – 
+Up and down | Scrolling/
+Swiping | Temporal traversal: 
+Linearly navigate a timeline or narrative structure |
+| z | Depth – 
+In and out | Zooming/
+Pinching | Zoom in or out: 
+Change the granularity to reveal underlying concepts (hyponym → hypernym) |
+
+By zooming in or out along these axes, users can access more detailed or broader information.
+
+With spatial hypernym zooming, not only can users navigate through hypernym and hyponym relationships, but they can also apply this interaction paradigm to long texts. By zooming in along the vertical axis, users can delve deeper into the text and explore more specific details. Conversely, by zooming out, users can obtain a higher-level overview of the text, enabling them to grasp the broader themes and concepts.
+
+By zooming in along the vertical axis, the paragraph can be summarized into its key ideas or main topics. Users can then choose to zoom in further on a specific topic, revealing more detailed information or supporting evidence. This process can be repeated until the user reaches a level where only the core concepts and themes of the text are exposed, allowing for a more efficient and focused reading experience.
