@@ -20,7 +20,6 @@ class VectorStore:
         self.embeddings = Embeddings()
         self.embeddings_model = self.embeddings.model
         self.vector_index = self.select_vector_store(index_name=index_name, node_label=node_label)
-        self.error_handler.inspect_object(self.vector_index)
 
     def initialize_vector_store(
             self, 
@@ -40,7 +39,7 @@ class VectorStore:
                     index_name=index_name,
                     node_label=node_label,
                 )
-                self.error_handler.success(f"Initialized vector store with index {index_name} and label {node_label}")
+                self.error_handler.debug_info(f"Initialized vector store with index {index_name} and label {node_label}")
             except Exception as e:
                 self.error_handler.warning(f"Error initializing vector store with index {index_name}")
                 self.error_handler.debug_info(f"{e}")
@@ -110,14 +109,12 @@ class VectorStore:
                 # self.error_handler.debug_info(f"Requested vector store is already loaded: [green]{self.vector_index.index_name}[/green]")
                 self.error_handler.debug_info(f"Requested vector store is already loaded: [green]{self.vector_index.index_name}[/green]")
         else:
-            self.error_handler.debug_info(f"Loading vector store with index [green]{index_name}[/green]")
             try:
                 self.vector_index = self.initialize_vector_store(index_name=index_name, node_label=node_label)
             except Exception as e:
                 self.error_handler.warning(f"Error loading vector store with index {index_name}: {e}")
                 self.error_handler.exception(sys.exc_info())
                 return None
-            self.error_handler.debug_info(f"Loaded vector store with index [green]{self.vector_index.index_name}[/green]")
 
         if self.vector_index:
             return self.vector_index
@@ -125,9 +122,10 @@ class VectorStore:
             return None
 
     
-    def add_documents_from_text(
+    def add_documents(
             self,
-            text,
+            text=None,
+            documents=None,
             node_label="Chunk",
             index_name=None,
             text_node_property="text",
@@ -142,10 +140,17 @@ class VectorStore:
         if not index_name:
             index_name = node_label
 
-        if not isinstance(text, list):
-            text = [text]
-
-        documents = Embeddings().create_documents(text)
+        if text and not documents:
+            if not isinstance(text, list):
+                text = [text]
+            documents = Embeddings().create_documents(text)
+        elif documents:
+            if not isinstance(documents, list):
+                documents = [documents]
+        else:
+            self.error_handler.warning(f"No text or document provided")
+            return None
+            
         created_nodes = []
 
         for document in documents:
@@ -153,7 +158,7 @@ class VectorStore:
             try:
                 node = self.graph.find_nodes_by_properties(
                     {text_node_property: document.page_content},
-                    label=node_label,
+                    node_label=node_label,
                 )[0]
             except IndexError:
                 pass
