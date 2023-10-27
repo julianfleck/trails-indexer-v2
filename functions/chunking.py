@@ -26,7 +26,7 @@ class SectionChunker:
             self.schema = Sections
         else:
             self.schema = schema
-            
+
         self.parser = PydanticOutputParser(pydantic_object=self.schema)
         format_instructions = self.parser.get_format_instructions()
 
@@ -35,7 +35,6 @@ class SectionChunker:
             input_variables=[],
             partial_variables={"format_instructions": format_instructions},
         )
-        error_handler().inspect_object(self.prompt)
 
     def chunk(self, text):
         human_message=f"This is the text: {text}"
