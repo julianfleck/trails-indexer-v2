@@ -27,62 +27,6 @@ class ContentTypes(Enum):
     other = "Any other type of text."
 
 
-class Metadata(BaseModel):
-    title: Optional[str] = Field(
-        description=description().title.strip()
-    )
-    last_indexed: Optional[str] = Field(
-        description=description().last_indexed.strip()
-    )
-    content_type: Optional[str] = Field(
-        description=description().content_type.strip(),
-        enum=[i.name for i in ContentTypes]
-    )
-    file_type: Optional[str] = Field(
-        description=description().file_type.strip()
-    )
-    author: Optional[str] = Field(
-        description=description().author.strip()
-    )
-    publisher: Optional[str] = Field(
-        description=description().publisher.strip()
-    )
-    hypernyms: Optional[List[str]] = Field(
-        description=description().hypernyms.strip()
-    )
-    hyponyms: Optional[List[str]] = Field(
-        description=description().hyponyms.strip()
-    )
-    topics: Optional[List[str]] = Field(
-        description=description().topics.strip()
-    )
-
-    required = ["title", "content_type", "topics"]
-
-    # @root_validator
-    # def check_author_or_publisher(cls, values):
-    #     author = values.get("author")
-    #     publisher = values.get("publisher")
-    #     if not author and not publisher:
-    #         raise ValueError("At least one of 'author' or 'publisher' must be defined.")
-    #     return values
-
-    # Ensure that topics, hypernyms and hyponyms are lower case
-    @validator("topics", "hypernyms", "hyponyms", "file_type", pre=True, always=True)
-    def fields_must_be_lowercase(cls, field: List[str]):
-        if field:
-            field = [item.lower() for item in field]
-        return field
-
-    @validator("content_type", pre=True, always=True)
-    def content_type_must_be_valid(cls, field: str):
-        valid_types = {ctype.name: ctype.value for ctype in ContentTypes}
-        if field not in valid_types:
-            ErrorHandler().debug_info(f"No content type found. Using default.")
-            field = "other"
-        return field
-
-
 class Summaries(BaseModel):
     summary_short: str = Field(
         description=description().summary_short.strip(),
@@ -96,12 +40,68 @@ class Summaries(BaseModel):
     required = ["summary_short", "summary_medium", "summary_long"]
 
 
-class Section(BaseModel):
+class Metadata(BaseModel):
+    title: Optional[str] = Field(
+        description=description().title.strip()
+    )
+    last_indexed: Optional[str] = Field(
+        description=description().last_indexed.strip()
+    )
+    content_type: Optional[str] = Field(
+        description=description().content_type.strip(),
+        enum=[i.name for i in ContentTypes]
+    )
+    author: Optional[str] = Field(
+        description=description().author.strip()
+    )
+    publisher: Optional[str] = Field(
+        description=description().publisher.strip()
+    )
+    hypernyms: List[str] = Field(
+        description=description().hypernyms.strip()
+    )
+    hyponyms: List[str] = Field(
+        description=description().hyponyms.strip()
+    )
+    topics: List[str] = Field(
+        description=description().topics.strip()
+    )
+    required = ["title", "content_type", "hypernyms", "hyponyms", "topics"]
+
+    # @root_validator
+    # def check_author_or_publisher(cls, values):
+    #     author = values.get("author")
+    #     publisher = values.get("publisher")
+    #     if not author and not publisher:
+    #         raise ValueError("At least one of 'author' or 'publisher' must be defined.")
+    #     return values
+
+    # Ensure that topics, hypernyms and hyponyms are lower case
+    @validator("topics", "hypernyms", "hyponyms", pre=True, always=True)
+    def fields_must_be_lowercase(cls, field: List[str]):
+        if field:
+            field = [item.lower() for item in field]
+        return field
+
+    @validator("content_type", pre=True, always=True)
+    def content_type_must_be_valid(cls, field: str):
+        valid_types = {ctype.name: ctype.value for ctype in ContentTypes}
+        if field not in valid_types:
+            ErrorHandler().debug_info(f"No content type found. Using default.")
+            field = "other"
+        return field
+    
+    # set Optional fields to None if empty string is passed
+    @validator("title", "author", "publisher", pre=True, always=True)
+    def set_optional_fields_to_none(cls, field: str):
+        if field == "":
+            field = "unknown"
+        return field
+
+
+class SectionMetadata(BaseModel):
     section_number: int = Field(
         description="The number of the section",
-    )
-    text: str = Field(
-        description="The text content of the section",
     )
     index_start: int = Field(
         description="The index of the first character of the section in the parent document",
@@ -109,10 +109,23 @@ class Section(BaseModel):
     index_end: int = Field(
         description="The index of the last character of the section in the parent document",
     )
-    summaries: Optional[List[Summaries]] = Field(
+    # summaries: Optional[List[Summaries]] = Field(
+    #     description=description().summaries.strip(),
+    #     exclude=True,
+    # )
+    summaries: Optional[object] = Field(
         description=description().summaries.strip(),
     )
-    required = ["section_number", "text", "index_start", "index_end"]
+
+
+class Section(BaseModel):
+    page_content: str = Field(
+        description="The text content of the section",
+    )
+    metadata: SectionMetadata = Field(
+        description="Metadata about the section",
+    )
+    required = ["page_content", "metadata"]
 
 
 class Sections(BaseModel):
@@ -121,6 +134,14 @@ class Sections(BaseModel):
     )
     required = ["sections"]
 
+class SectionsWithSummaries(Sections):
+    sections: List[Section] = Field(
+        description=description().section.strip(),
+    )
+    summaries: Optional[object] = Field(
+        description=description().summaries.strip(),
+    )
+    required = ["sections", "summaries"]
 
 class TrailsDocument(Document):
     page_content: str = Field(
@@ -129,7 +150,13 @@ class TrailsDocument(Document):
     metadata: Metadata = Field(
         description="Metadata about the document",
     )
-    required = ["page_content", "metadata"]
+    summaries: Optional[Summaries] = Field(
+        description=description().summaries.strip(),
+    )
+    sections: List[Section] = Field(
+        description=description().section.strip(),
+    )
+    required = ["page_content", "metadata", "summaries", "sections"]
 
 
 class SectionedTrailsDocument(TrailsDocument):
