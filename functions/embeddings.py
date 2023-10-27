@@ -4,7 +4,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.document_loaders import TextLoader
 from langchain.schema.document import Document
 from utils.config_loader import ConfigLoader
-from schema.general import Functions as general_functions
+from schema.schemas import Timestamp
 
 class Embeddings:
     def __init__(self, config_file='config/configuration.toml'):
@@ -12,6 +12,9 @@ class Embeddings:
         self.config_loader = ConfigLoader(config_file)
         openai_config = self.config_loader.get_openai_config()
         
+        # TODO: test/change to LLama2 Embeddings model:
+        # https://medium.com/@liusimao8/using-llama-2-models-for-text-embedding-with-langchain-79183350593d
+
         # Initialize OpenAIEmbeddings with values from config
         self.model = OpenAIEmbeddings(
             model="text-embedding-ada-002",
@@ -39,7 +42,7 @@ class Embeddings:
                 metadata={
                     "start_index": 0,
                     "end_index": len(text),
-                    "last_indexed": general_functions().get_current_timestamp()
+                    "last_indexed": Timestamp().now
                 }
             )
         
