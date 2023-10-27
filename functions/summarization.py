@@ -30,14 +30,11 @@ class Summarizer:
         self.parser = PydanticOutputParser(pydantic_object=self.schema)
         format_instructions = self.parser.get_format_instructions()
 
-        error_handler().inspect_object(format_instructions)
-
         self.prompt = PromptTemplate(
             template=prompts().summarization,
             input_variables=[],
             partial_variables={"format_instructions": format_instructions},
         )
-        error_handler().inspect_object(self.prompt)
 
     def summarize(self, text):
         human_message=f"This is the text: {text}"
