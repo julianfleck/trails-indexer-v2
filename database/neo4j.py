@@ -2,11 +2,13 @@ import sys
 from neo4j import GraphDatabase
 from neo4j.exceptions import ServiceUnavailable
 from langchain.schema.document import Document
-from utils.error_handler import ErrorHandler as error_handler
+from utils.error_handler import ErrorHandler
 from utils.config_loader import ConfigLoader as config
-from schema.general import Functions
+from schema.schemas import Timestamp
 
 from database.vectorstore import VectorStore
+
+error_handler = ErrorHandler()
 
 class GraphDatabaseConnection:
     def __init__(self, uri, user, password):
@@ -33,7 +35,7 @@ class GraphDatabaseConnection:
             self.error_handler.service_unavailable(e)
             return None
         except Exception as e:
-            self.error_handler.exception(sys.exc_info())
+            self.error_handler.handle_error(e)
             return None
         
     def write(self, query, parameters={}):
@@ -53,9 +55,8 @@ class Graph:
     def __init__(self):
         neo4j_config = config().get_neo4j_config()
         self.config = config().get_config()
-        self.error_handler = error_handler()
+        self.error_handler = error_handler
         self.vector_store = VectorStore(graph=self)
-        self.schema_functions = Functions()
         self.graph = self
         self.graph_database = GraphDatabaseConnection(
             uri=neo4j_config['URI'],
@@ -90,7 +91,7 @@ class Graph:
             self.error_handler.exception(sys.exc_info())
             return None
     
-    def find_nodes_by_properties(self, properties, label=None):
+    def find_nodes_by_properties(self, properties, node_label=None):
         """
         Find nodes based on multiple properties and an optional label.
 
@@ -105,8 +106,8 @@ class Graph:
         conditions = [f"n.{property} = ${property}" for property in properties.keys()]
         query_condition = " AND ".join(conditions)
         
-        if label:
-            query = f"MATCH (n:{label})"
+        if node_label:
+            query = f"MATCH (n:{node_label})"
         else:
             query = "MATCH (n)"
         
@@ -159,6 +160,102 @@ class Graph:
             return records[0]['parent']
         else:
             return None
+
+
+    def find_child_nodes(self, parent_id, node_label=None, sequence_label=None):
+        """
+        Find all child nodes of a parent node.
+
+        Args:
+            parent_id (int or str): The ID or UID of the parent node.
+            node_label (str, optional): The label of the child nodes to search for. If not provided, all nodes will be searched.
+            sequence_label (str, optional): The label of the sequence nodes to search for. If not provided, only the first child node will be returned.
+
+        Returns:
+            List: List of child nodes.
+        """
+        
+        # Base match for the parent and direct child
+        if isinstance(parent_id, int):
+            base_query = f"""
+            MATCH (parent)-->(first_child)
+            WHERE id(parent) = $parent_id 
+            """
+        else:
+            base_query = f"""
+            MATCH (parent)-->(first_child)
+            WHERE parent.id = $parent_id 
+            """
+        
+        # Filter by the node_label if provided
+        if node_label:
+            base_query = base_query.replace("-->(first_child)", f"-->(first_child:{node_label})")
+
+        children = []
+
+        # Fetch the direct children first
+        direct_children_query = base_query + "RETURN first_child"
+        records = self.graph_database.read(direct_children_query, {"parent_id": parent_id})
+        
+        for record in records:
+            children.append(record['first_child'])
+            
+            # If a sequence_label is provided, traverse through the sequence for each child
+            if sequence_label:
+                sequence_query = f"""
+                MATCH (first_child)-[:{sequence_label}*]->(next_child)
+                WHERE id(first_child) = {record['first_child'].id}
+                RETURN next_child
+                """
+                sequence_records = self.graph_database.read(sequence_query)
+                for seq_record in sequence_records:
+                    children.append(seq_record['next_child'])
+
+        return children
+
+
+
+
+    def find_child_nodes_by_properties(self, properties, parent_id=None, node_label=None):
+        """
+        Find nodes based on multiple properties and an optional label.
+
+        Args:
+            properties (dict): Dictionary containing key-value pairs of properties.
+            parent_id (Node, optional): The parent node to limit the search to.
+            node_label (str, optional): Label of the nodes to search for. If not provided, all nodes will be searched.
+
+        Returns:
+            List: List of nodes that match the label (if provided) and properties.
+        """
+        
+        conditions = [f"child.{property} = ${property}" for property in properties.keys()]
+        query_condition = " AND ".join(conditions)
+
+        # If a parent_id is provided, we should limit our search to children of that specific parent
+        if parent_id:
+            # If parent_id is of integer type, then we assume it's Neo4j's internal ID.
+            # Otherwise, we assume it's a UUID.
+            if isinstance(parent_id, int):
+                parent_condition = f"MATCH (parent)-->(child) WHERE id(parent) = $parent_id"
+            else:
+                parent_condition = f"MATCH (parent)-->(child) WHERE parent.id = $parent_id"
+        else:
+            parent_condition = "MATCH (child)"
+
+        # Adding optional node_label
+        if node_label:
+            parent_condition = parent_condition.replace("(child)", f"(child:{node_label})")
+
+        query = f"{parent_condition} WHERE {query_condition} RETURN child"
+
+        try:
+            records = self.graph_database.read(query, {**properties, "parent_id": parent_id})
+            return [record['child'] for record in records]
+        except Exception as e:
+            self.error_handler.exception(exc_info=sys.exc_info())
+            return []
+
 
     def find_edge_by_id(self, edge_id):
         query = "MATCH ()-[r]-() WHERE id(r) = $edge_id RETURN r"
@@ -256,7 +353,7 @@ class Graph:
         
         if edge_values is None:
             edge_values = {
-                "last_indexed": self.schema_functions.get_current_timestamp()
+                "last_indexed": Timestamp().now
             }
 
         # Ensure origins is a list
@@ -379,7 +476,7 @@ class Graph:
         self,
         origin_node_id, 
         similarity_threshold=None, 
-        node_label=None, 
+        node_label=None,
         index_name=None,
         max_nodes=None,
         bidirectional=False,
@@ -391,7 +488,13 @@ class Graph:
         Args:
             origin_node_id (str): UID of the origin node whose similar nodes are to be found and linked.
             similarity_threshold (float, optional): Threshold for similarity score. Defaults to value from configuration.
+            node_label (str, optional): Label of the nodes to search for. If not provided, all nodes will be searched.
+            index_name (str, optional): Name of the vector index to use. If not provided, the node_label will be used.
+            limit_to_children_of_parent_id (int, optional): ID of the parent node to limit the search to. Defaults to None.
+            # TODO: Implement scope to limit search to parent nodes - rethink node_label vs. scope logic
             max_nodes (int, optional): Maximum number of nodes to link. If not provided, links all nodes above the threshold.
+            bidirectional (bool, optional): If True, create a bidirectional relationship. Defaults to False.
+            force (bool, optional): If True, forcefully create the relationship even if one exists. Defaults to False.
 
         Returns:
             bool: True if the linking succeeds for all neighbors above the threshold, False otherwise.
@@ -579,11 +682,41 @@ class Graph:
                     )
 
 
+    def update_node_properties(self, node_id, properties):
+        """
+        Update the properties of a node.
+
+        Args:
+            node_id (int or str): ID or UID of the node to update.
+            properties (dict): Dictionary of properties to update.
+
+        Returns:
+            bool: True if the update succeeds, False otherwise.
+        """
+        # Determine if the ID is an internal Neo4j ID or a uid
+        node_id_key = "id(n)" if isinstance(node_id, int) else "n.id"
+
+        # Construct the query
+        query = f"""
+            MATCH (n)
+            WHERE {node_id_key} = $node_id
+            SET n += $properties
+        """
+        
+        # Execute the query
+        try:
+            self.graph_database.write(query, {"node_id": node_id, "properties": properties})
+            return True
+        except Exception as e:
+            self.error_handler.handle_error(e)
+            return False
+
     def save_and_link_sequentially(
             self,
             graph=None, 
             node_label="Chunk",
-            text=None, 
+            text=None,
+            documents=None,
             chunker=None, 
             relationship_name="LINKS_TO", 
             sequence_relationship_name=None, 
@@ -597,6 +730,7 @@ class Graph:
             graph: The graph object.
             node_label (str): The label for the node.
             text (str, optional): The main text to process.
+            document (Document, optional): The document objects to process.
             chunker (callable, optional): Function to split the main text into smaller chunks.
             relationship_name (str, optional): Name of the relationship between parents and chunks.
             sequence_relationship_name (str, optional): Name of the sequential relationship between chunks.
@@ -608,9 +742,13 @@ class Graph:
         if not graph and not isinstance(graph, Graph):
             raise ValueError("Graph object must be provided.")
         
-        if not text and not parent_ids:
-            raise ValueError("Either text or parent_ids must be provided.")
-        
+        if text and documents:
+            raise ValueError("Only one of text or document must be provided.")
+
+        if not text:
+            if not documents and not parent_ids:
+                raise ValueError("Either text, documents or parent_ids must be provided.")
+
         self.vector_store = VectorStore(index_name=node_label, node_label=node_label, graph=graph)
 
         # If parent_ids are provided, ensure it's a list
@@ -628,25 +766,44 @@ class Graph:
                 if parent_node:
                     parent_texts.append(parent_node['text'])
                     self.error_handler.debug_info(f"Found parent node with ID {parent_id}")
-                    self.error_handler.debug_info(parent_node['text'])
             text = ' '.join(parent_texts)
 
-        # Save chunks to the database
-        chunks = chunker(text) if chunker else [text]
+        # Initialize list to store the IDs of the created nodes
         chunk_ids = []
-
-        for chunk in chunks:
+        
+        # If a document object is provided, save the document to the graph
+        if documents:
             try:
-                saved_chunks = self.vector_store.add_documents_from_text(chunk, node_label=node_label)
-                for saved_chunk in saved_chunks:
-                    chunk_ids.append(saved_chunk)
+                chunk_ids = self.vector_store.add_documents(
+                    documents=documents, 
+                    node_label=node_label
+                )
+                error_handler.debug_info(f"Saved documents to graph: {chunk_ids}")
             except Exception as e:
-                self.error_handler.generic_error(f"Error saving chunk", exception=e)
+                error_handler.handle_error(e)
+        
+        # If text is provided, chunk the text and save it to the graph
+        if text and not documents:
+            # If a chunker function is provided, split the text into chunks
+            error_handler.debug_info(f"Chunking text")
+            chunks = chunker(text) if chunker else [text]
 
+            for chunk in chunks:
+                try:
+                    saved_chunks = self.vector_store.add_documents(text=chunk, node_label=node_label)
+                    for saved_chunk in saved_chunks:
+                        chunk_ids.append(saved_chunk)
+                        error_handler.debug_info(f"Added chunk to graph: {saved_chunk}")
+                except Exception as e:
+                    self.error_handler.generic_error(f"Error saving chunk", exception=e)
+
+        # Link chunks to parent nodes
+        error_handler.inspect_object(chunk_ids)
         if parent_linking_pattern == "first_only":
             # Link the first chunk to the parent nodes
             if parent_ids and chunk_ids:
                 for parent_id in parent_ids:
+                    error_handler.debug_info(f"Linking parent node {parent_id} to {chunk_ids[0]}")
                     graph.link_nodes(origins=[parent_id], targets=[chunk_ids[0]], relationship_name=relationship_name)
         elif parent_linking_pattern == "all":
             # Link all chunks to the parent nodes
@@ -656,8 +813,7 @@ class Graph:
         
         # Link chunks sequentially
         if sequence_relationship_name and len(chunk_ids) > 1:
+            error_handler.debug_info(f"Linking chunks sequentially")
             graph.link_nodes_sequentially(targets=chunk_ids, relationship_name=sequence_relationship_name)
-            
-        self.error_handler.inspect_object(chunk_ids)
 
         return chunk_ids
